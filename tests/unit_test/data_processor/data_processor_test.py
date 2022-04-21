@@ -3078,36 +3078,21 @@ class TestMongoProcessor:
         assert nlu_fallback['name'] == 'FallbackClassifier'
         assert nlu_fallback['threshold'] == 0.6
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
+        assert len(rule_policy) == 4
         assert rule_policy['core_fallback_action_name'] == 'action_default_fallback'
         assert rule_policy['core_fallback_threshold'] == 0.3
-        expected = {
-            "language": "en",
-            "pipeline": [
-                {"name": "WhitespaceTokenizer"},
-                {"name": "RegexFeaturizer"},
-                {"name": "LexicalSyntacticFeaturizer"},
-                {"name": "CountVectorsFeaturizer"},
-                {"name": "CountVectorsFeaturizer",
-                 "analyzer": "char_wb",
-                 "min_ngram": 1,
-                 "max_ngram": 4},
-                {"name": "DIETClassifier",
-                 "epochs": 200},
-                {"name": "FallbackClassifier",
-                 "threshold": 0.6},
-                {"name": "EntitySynonymMapper"},
-                {"name": "ResponseSelector",
-                 "epochs": 300}
-            ],
-            "policies": [
-                {"name": "MemoizationPolicy"},
-                {"name": "TEDPolicy",
-                 "epochs": 400},
-                {"name": "RulePolicy",
-                 'core_fallback_threshold': 0.3,
-                 'core_fallback_action_name': 'action_default_fallback'}]
-        }
+        expected = {'language': 'en', 'pipeline': [{'name': 'WhitespaceTokenizer'}, {'name': 'RegexFeaturizer'},
+                                                   {'name': 'LexicalSyntacticFeaturizer'}, {'name': 'ConveRTFeaturizer',
+                                                                                            'model_url': 'https://github.com/connorbrinton/polyai-models/releases/download/v1.0/model.tar.gz'},
+                                                   {'constrain_similarities': True, 'epochs': 200,
+                                                    'name': 'DIETClassifier'},
+                                                   {'name': 'FallbackClassifier', 'threshold': 0.6},
+                                                   {'name': 'EntitySynonymMapper'},
+                                                   {'name': 'ResponseSelector', 'epochs': 300}],
+                    'policies': [{'name': 'MemoizationPolicy'}, {'epochs': 400, 'max_history': 5, 'name': 'TEDPolicy'},
+                                 {'core_fallback_action_name': 'action_default_fallback',
+                                  'core_fallback_threshold': 0.3, 'enable_fallback_prediction': True,
+                                  'name': 'RulePolicy'}]}
         assert config == expected
 
     def test_get_config_properties(self):
@@ -3156,7 +3141,7 @@ class TestMongoProcessor:
         assert nlu_fallback['name'] == 'FallbackClassifier'
         assert nlu_fallback['threshold'] == 0.6
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
+        assert len(rule_policy) == 4
         assert rule_policy['core_fallback_action_name'] == 'action_default_fallback'
         assert rule_policy['core_fallback_threshold'] == 0.6
 
@@ -3188,32 +3173,18 @@ class TestMongoProcessor:
         ted = next((comp for comp in config['policies'] if comp["name"] == "TEDPolicy"), None)
         assert ted['name'] == 'TEDPolicy'
         assert ted['epochs'] == 400
-        expected = {
-            "language": "en",
-            "pipeline": [
-                {"name": "WhitespaceTokenizer"},
-                {"name": "RegexFeaturizer"},
-                {"name": "LexicalSyntacticFeaturizer"},
-                {"name": "CountVectorsFeaturizer"},
-                {"name": "CountVectorsFeaturizer",
-                 "analyzer": "char_wb",
-                 "min_ngram": 1,
-                 "max_ngram": 4},
-                {"name": "DIETClassifier",
-                 "epochs": 200},
-                {'name': 'FallbackClassifier',
-                 'threshold': 0.7},
-                {"name": "EntitySynonymMapper"},
-                {"name": "ResponseSelector",
-                 "epochs": 300}
-            ],
-            "policies": [
-                {"name": "MemoizationPolicy"},
-                {"name": "TEDPolicy",
-                 "epochs": 400},
-                {"name": "RulePolicy", 'core_fallback_action_name': 'action_default_fallback',
-                 'core_fallback_threshold': 0.3}]
-        }
+        expected = {'language': 'en', 'pipeline': [{'name': 'WhitespaceTokenizer'}, {'name': 'RegexFeaturizer'},
+                                                   {'name': 'LexicalSyntacticFeaturizer'}, {'name': 'ConveRTFeaturizer',
+                                                                                            'model_url': 'https://github.com/connorbrinton/polyai-models/releases/download/v1.0/model.tar.gz'},
+                                                   {'constrain_similarities': True, 'epochs': 200,
+                                                    'name': 'DIETClassifier'},
+                                                   {'name': 'FallbackClassifier', 'threshold': 0.7},
+                                                   {'name': 'EntitySynonymMapper'},
+                                                   {'name': 'ResponseSelector', 'epochs': 300}],
+                    'policies': [{'name': 'MemoizationPolicy'}, {'epochs': 400, 'max_history': 5, 'name': 'TEDPolicy'},
+                                 {'core_fallback_action_name': 'action_default_fallback',
+                                  'core_fallback_threshold': 0.3, 'enable_fallback_prediction': True,
+                                  'name': 'RulePolicy'}]}
         assert config == expected
 
     def test_get_config_properties_epoch_only(self):
@@ -3256,10 +3227,10 @@ class TestMongoProcessor:
 
     def test_list_epochs_for_components_not_present(self):
         configs = Configs._from_son(
-            read_config_file("./template/config/default.yml")
+            read_config_file("./template/config/kairon-default.yml")
         ).to_mongo().to_dict()
-        del configs['pipeline'][5]
-        del configs['pipeline'][7]
+        del configs['pipeline'][4]
+        del configs['pipeline'][6]
         del configs['policies'][1]
         processor = MongoProcessor()
         processor.save_config(configs, 'test_list_component_not_exists', 'test')
@@ -3276,10 +3247,10 @@ class TestMongoProcessor:
 
     def test_save_component_properties_component_not_exists(self):
         configs = Configs._from_son(
-            read_config_file("./template/config/default.yml")
+            read_config_file("./template/config/kairon-default.yml")
         ).to_mongo().to_dict()
-        del configs['pipeline'][5]
-        del configs['pipeline'][7]
+        del configs['pipeline'][4]
+        del configs['pipeline'][6]
         del configs['policies'][1]
         processor = MongoProcessor()
         processor.save_config(configs, 'test_component_not_exists', 'test')
@@ -3303,7 +3274,7 @@ class TestMongoProcessor:
     def test_save_component_fallback_not_configured(self):
         Actions(name='action_say_bye', bot='test_fallback_not_configured', user='test').save()
         configs = Configs._from_son(
-            read_config_file("./template/config/default.yml")
+            read_config_file("./template/config/kairon-default.yml")
         ).to_mongo().to_dict()
         del configs['pipeline'][6]
         del configs['policies'][2]
@@ -3315,32 +3286,16 @@ class TestMongoProcessor:
         processor = MongoProcessor()
         processor.save_component_properties(config, 'test_fallback_not_configured', 'test')
         config = processor.load_config('test_fallback_not_configured')
-        expected = {
-            "language": "en",
-            "pipeline": [
-                {"name": "WhitespaceTokenizer"},
-                {"name": "RegexFeaturizer"},
-                {"name": "LexicalSyntacticFeaturizer"},
-                {"name": "CountVectorsFeaturizer"},
-                {"name": "CountVectorsFeaturizer",
-                 "analyzer": "char_wb",
-                 "min_ngram": 1,
-                 "max_ngram": 4},
-                {"name": "DIETClassifier",
-                 "epochs": 100},
-                {"name": "FallbackClassifier",
-                 "threshold": 0.8},
-                {"name": "EntitySynonymMapper"},
-                {"name": "ResponseSelector",
-                 "epochs": 100}
-            ],
-            "policies": [
-                {"name": "MemoizationPolicy"},
-                {"name": "TEDPolicy",
-                 "epochs": 200},
-                {"name": "RulePolicy", 'core_fallback_action_name': 'action_say_bye',
-                 'core_fallback_threshold': 0.3}]
-        }
+        expected = {'language': 'en', 'pipeline': [{'name': 'WhitespaceTokenizer'}, {'name': 'RegexFeaturizer'},
+                                                   {'name': 'LexicalSyntacticFeaturizer'}, {'name': 'ConveRTFeaturizer',
+                                                                                            'model_url': 'https://github.com/connorbrinton/polyai-models/releases/download/v1.0/model.tar.gz'},
+                                                   {'constrain_similarities': True, 'epochs': 100,
+                                                    'name': 'DIETClassifier'},
+                                                   {'name': 'FallbackClassifier', 'threshold': 0.8},
+                                                   {'name': 'ResponseSelector', 'epochs': 100}],
+                    'policies': [{'name': 'MemoizationPolicy'}, {'epochs': 200, 'max_history': 5, 'name': 'TEDPolicy'},
+                                 {'name': 'RulePolicy', 'core_fallback_action_name': 'action_say_bye',
+                                  'core_fallback_threshold': 0.3}]}
         assert config == expected
 
     def test_save_component_properties_nlu_fallback_only(self):
@@ -3352,33 +3307,19 @@ class TestMongoProcessor:
         assert nlu_fallback['name'] == 'FallbackClassifier'
         assert nlu_fallback['threshold'] == 0.6
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
-        expected = {
-            "language": "en",
-            "pipeline": [
-                {"name": "WhitespaceTokenizer"},
-                {"name": "RegexFeaturizer"},
-                {"name": "LexicalSyntacticFeaturizer"},
-                {"name": "CountVectorsFeaturizer"},
-                {"name": "CountVectorsFeaturizer",
-                 "analyzer": "char_wb",
-                 "min_ngram": 1,
-                 "max_ngram": 4},
-                {"name": "DIETClassifier",
-                 "epochs": 100},
-                {"name": "FallbackClassifier",
-                 "threshold": 0.6},
-                {"name": "EntitySynonymMapper"},
-                {"name": "ResponseSelector",
-                 "epochs": 100}
-            ],
-            "policies": [
-                {"name": "MemoizationPolicy"},
-                {"name": "TEDPolicy",
-                 "epochs": 200},
-                {"name": "RulePolicy", 'core_fallback_action_name': 'action_default_fallback',
-                 'core_fallback_threshold': 0.3}]
-        }
+        assert len(rule_policy) == 4
+        expected = {'language': 'en', 'pipeline': [{'name': 'WhitespaceTokenizer'}, {'name': 'RegexFeaturizer'},
+                                                   {'name': 'LexicalSyntacticFeaturizer'}, {'name': 'ConveRTFeaturizer',
+                                                                                            'model_url': 'https://github.com/connorbrinton/polyai-models/releases/download/v1.0/model.tar.gz'},
+                                                   {'constrain_similarities': True, 'epochs': 100,
+                                                    'name': 'DIETClassifier'},
+                                                   {'name': 'FallbackClassifier', 'threshold': 0.6},
+                                                   {'name': 'EntitySynonymMapper'},
+                                                   {'name': 'ResponseSelector', 'epochs': 100}],
+                    'policies': [{'name': 'MemoizationPolicy'}, {'epochs': 200, 'max_history': 5, 'name': 'TEDPolicy'},
+                                 {'core_fallback_action_name': 'action_default_fallback',
+                                  'core_fallback_threshold': 0.3, 'enable_fallback_prediction': True,
+                                  'name': 'RulePolicy'}]}
         assert config == expected
 
     def test_save_component_properties_all_nlu_fallback_update_threshold(self):
@@ -3390,7 +3331,7 @@ class TestMongoProcessor:
         assert nlu_fallback['name'] == 'FallbackClassifier'
         assert nlu_fallback['threshold'] == 0.7
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
+        assert len(rule_policy) == 4
 
     def test_save_component_properties_action_fallback_only(self):
         nlu_fallback = {'action_fallback': 'action_say_bye'}
@@ -3400,35 +3341,20 @@ class TestMongoProcessor:
         config = processor.load_config('test_action_fallback_only')
         assert next((comp for comp in config['pipeline'] if comp["name"] == "FallbackClassifier"), None)
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
+        assert len(rule_policy) == 4
         assert rule_policy['core_fallback_action_name'] == 'action_say_bye'
         assert rule_policy['core_fallback_threshold'] == 0.3
-        expected = {
-            "language": "en",
-            "pipeline": [
-                {"name": "WhitespaceTokenizer"},
-                {"name": "RegexFeaturizer"},
-                {"name": "LexicalSyntacticFeaturizer"},
-                {"name": "CountVectorsFeaturizer"},
-                {"name": "CountVectorsFeaturizer",
-                 "analyzer": "char_wb",
-                 "min_ngram": 1,
-                 "max_ngram": 4},
-                {"name": "DIETClassifier",
-                 "epochs": 100},
-                {'name': 'FallbackClassifier', 'threshold': 0.7},
-                {"name": "EntitySynonymMapper"},
-                {"name": "ResponseSelector",
-                 "epochs": 100}
-            ],
-            "policies": [
-                {"name": "MemoizationPolicy"},
-                {"name": "TEDPolicy",
-                 "epochs": 200},
-                {"core_fallback_action_name": "action_say_bye",
-                 "core_fallback_threshold": 0.3,
-                 "name": "RulePolicy"}]
-        }
+        expected = {'language': 'en', 'pipeline': [{'name': 'WhitespaceTokenizer'}, {'name': 'RegexFeaturizer'},
+                                                   {'name': 'LexicalSyntacticFeaturizer'}, {'name': 'ConveRTFeaturizer',
+                                                                                            'model_url': 'https://github.com/connorbrinton/polyai-models/releases/download/v1.0/model.tar.gz'},
+                                                   {'constrain_similarities': True, 'epochs': 100,
+                                                    'name': 'DIETClassifier'},
+                                                   {'name': 'FallbackClassifier', 'threshold': 0.7},
+                                                   {'name': 'EntitySynonymMapper'},
+                                                   {'name': 'ResponseSelector', 'epochs': 100}],
+                    'policies': [{'name': 'MemoizationPolicy'}, {'epochs': 200, 'max_history': 5, 'name': 'TEDPolicy'},
+                                 {'core_fallback_action_name': 'action_say_bye', 'core_fallback_threshold': 0.3,
+                                  'enable_fallback_prediction': True, 'name': 'RulePolicy'}]}
         assert config == expected
 
     def test_save_component_properties_all_action_fallback_update(self):
@@ -3439,7 +3365,7 @@ class TestMongoProcessor:
         config = processor.load_config('test_action_fallback_only')
         assert next((comp for comp in config['pipeline'] if comp["name"] == "FallbackClassifier"), None)
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
+        assert len(rule_policy) == 4
         assert rule_policy['core_fallback_action_name'] == 'action_say_bye_bye'
         assert rule_policy['core_fallback_threshold'] == 0.3
 
@@ -3452,7 +3378,7 @@ class TestMongoProcessor:
         config = processor.load_config('test_action_fallback_only')
         assert next((comp for comp in config['pipeline'] if comp["name"] == "FallbackClassifier"), None)
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
+        assert len(rule_policy) == 4
         assert rule_policy['core_fallback_action_name'] == 'action_say_bye_bye'
         assert rule_policy['core_fallback_threshold'] == 0.3
 
@@ -3465,7 +3391,7 @@ class TestMongoProcessor:
         config = processor.load_config('test_action_fallback_only')
         assert next((comp for comp in config['pipeline'] if comp["name"] == "FallbackClassifier"), None)
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
+        assert len(rule_policy) == 4
         assert rule_policy['core_fallback_action_name'] == 'action_say_bye_bye'
         assert rule_policy['core_fallback_threshold'] == 0.3
 
@@ -3478,7 +3404,7 @@ class TestMongoProcessor:
         config = processor.load_config('test_action_fallback_only')
         assert next((comp for comp in config['pipeline'] if comp["name"] == "FallbackClassifier"), None)
         rule_policy = next((comp for comp in config['policies'] if comp["name"] == "RulePolicy"), None)
-        assert len(rule_policy) == 3
+        assert len(rule_policy) == 4
         assert rule_policy['core_fallback_action_name'] == 'action_default_fallback'
         assert rule_policy['core_fallback_threshold'] == 0.3
 
@@ -3660,7 +3586,7 @@ class TestMongoProcessor:
 
     def test_save_chat_client_config_not_exists(self, monkeypatch):
         def _mock_bot_info(*args, **kwargs):
-            return {'name': 'test', 'account': 1, 'user': 'user@integration.com'}
+            return {'name': 'test', 'account': 1, 'user': 'user@integration.com', 'status': True}
 
         def _mock_list_bot_accessors(*args, **kwargs):
             yield {'accessor_email': 'user@integration.com'}
@@ -3679,7 +3605,7 @@ class TestMongoProcessor:
 
     def test_save_chat_client_config(self, monkeypatch):
         def _mock_bot_info(*args, **kwargs):
-            return {'name': 'test', 'account': 1, 'user': 'user@integration.com'}
+            return {'name': 'test', 'account': 1, 'user': 'user@integration.com', 'status': True}
 
         def _mock_list_bot_accessors(*args, **kwargs):
             yield {'accessor_email': 'user@integration.com'}
@@ -3699,7 +3625,7 @@ class TestMongoProcessor:
 
     def test_get_chat_client_config_not_exists(self, monkeypatch):
         def _mock_bot_info(*args, **kwargs):
-            return {'name': 'test_bot', 'account': 2, 'user': 'user@integration.com'}
+            return {'name': 'test_bot', 'account': 2, 'user': 'user@integration.com', 'status': True}
 
         def _mock_list_bot_accessors(*args, **kwargs):
             yield {'accessor_email': 'user@integration.com'}
@@ -3717,7 +3643,7 @@ class TestMongoProcessor:
 
     def test_get_chat_client_config(self, monkeypatch):
         def _mock_bot_info(*args, **kwargs):
-            return {'name': 'test', 'account': 1, 'user': 'user@integration.com'}
+            return {'name': 'test', 'account': 1, 'user': 'user@integration.com', 'status': True}
 
         def _mock_list_bot_accessors(*args, **kwargs):
             yield {'accessor_email': 'user@integration.com'}
@@ -3734,7 +3660,7 @@ class TestMongoProcessor:
             raise AppException('Config not found')
 
         def _mock_bot_info(*args, **kwargs):
-            return {'name': 'test', 'account': 1, 'user': 'user@integration.com'}
+            return {'name': 'test', 'account': 1, 'user': 'user@integration.com', 'status': True}
 
         def _mock_list_bot_accessors(*args, **kwargs):
             yield {'accessor_email': 'user@integration.com'}
@@ -5369,37 +5295,41 @@ class TestMongoProcessor:
         )
         responses.add(
             'GET',
-            f'{url}/rest/api/2/project',
-            json=[{'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
-                   'self': f'{url}/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL', 'name': 'helicopter',
-                   'avatarUrls': {
-                       '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408'},
-                   'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
-                   'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
-                   'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}]
-        )
-        responses.add(
-            'GET',
-            f'{url}/rest/api/2/issuetype',
-            json=[{'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
-                   'description': 'Subtasks track small pieces of work that are part of a larger task.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
-                   'name': 'Subtask', 'untranslatedName': 'Subtask', 'subtask': True, 'avatarId': 10316,
-                   'hierarchyLevel': -1, 'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
-                   'description': 'A small, distinct piece of work.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
-                   'name': 'Task', 'untranslatedName': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10000', 'id': '10000',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/images/icons/issuetypes/epic.svg', 'name': 'Epic',
-                   'untranslatedName': 'Epic', 'subtask': False, 'hierarchyLevel': 1},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
-                   'name': 'Bug', 'untranslatedName': 'Bug', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}}]
+            f'{url}/rest/api/2/project/HEL',
+            json={'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
+                  'self': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL',
+                  'description': '', 'lead': {
+                    'self': 'https://udit-pandey.atlassian.net/rest/api/2/user?accountId=6205e1585d18ad00729aa75f',
+                    'accountId': '6205e1585d18ad00729aa75f', 'avatarUrls': {
+                        '48x48': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '24x24': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '16x16': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '32x32': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png'},
+                    'displayName': 'Udit Pandey', 'active': True}, 'components': [], 'issueTypes': [
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
+                     'description': 'A small, distinct piece of work.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
+                     'name': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
+                     'description': 'A collection of related bugs, stories, and tasks.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
+                     'name': 'Epic', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
+                     'description': 'Subtasks track small pieces of work that are part of a larger task.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
+                     'name': 'Bug', 'subtask': True, 'avatarId': 10316, 'hierarchyLevel': -1}],
+                  'assigneeType': 'UNASSIGNED', 'versions': [], 'name': 'helicopter', 'roles': {
+                    'atlassian-addons-project-access': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10007',
+                    'Administrator': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10004',
+                    'Viewer': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10006',
+                    'Member': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10005'}, 'avatarUrls': {
+                    '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408',
+                    '24x24': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=small',
+                    '16x16': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=xsmall',
+                    '32x32': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium'},
+                  'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
+                  'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
+                  'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}
         )
         processor = MongoProcessor()
         assert processor.add_jira_action(action, bot, user)
@@ -5475,37 +5405,41 @@ class TestMongoProcessor:
         )
         responses.add(
             'GET',
-            f'{url}/rest/api/2/project',
-            json=[{'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
-                   'self': f'{url}/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL', 'name': 'helicopter',
-                   'avatarUrls': {
-                       '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408'},
-                   'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
-                   'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
-                   'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}]
-        )
-        responses.add(
-            'GET',
-            f'{url}/rest/api/2/issuetype',
-            json=[{'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
-                   'description': 'Subtasks track small pieces of work that are part of a larger task.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
-                   'name': 'Subtask', 'untranslatedName': 'Subtask', 'subtask': True, 'avatarId': 10316,
-                   'hierarchyLevel': -1, 'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
-                   'description': 'A small, distinct piece of work.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
-                   'name': 'Task', 'untranslatedName': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10000', 'id': '10000',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/images/icons/issuetypes/epic.svg', 'name': 'Epic',
-                   'untranslatedName': 'Epic', 'subtask': False, 'hierarchyLevel': 1},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
-                   'name': 'Bug', 'untranslatedName': 'Bug', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}}]
+            f'{url}/rest/api/2/project/HEL',
+            json={'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
+                  'self': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL',
+                  'description': '', 'lead': {
+                    'self': 'https://udit-pandey.atlassian.net/rest/api/2/user?accountId=6205e1585d18ad00729aa75f',
+                    'accountId': '6205e1585d18ad00729aa75f', 'avatarUrls': {
+                        '48x48': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '24x24': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '16x16': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '32x32': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png'},
+                    'displayName': 'Udit Pandey', 'active': True}, 'components': [], 'issueTypes': [
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
+                     'description': 'A small, distinct piece of work.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
+                     'name': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
+                     'description': 'A collection of related bugs, stories, and tasks.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
+                     'name': 'Epic', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
+                     'description': 'Subtasks track small pieces of work that are part of a larger task.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
+                     'name': 'Bug', 'subtask': True, 'avatarId': 10316, 'hierarchyLevel': -1}],
+                  'assigneeType': 'UNASSIGNED', 'versions': [], 'name': 'helicopter', 'roles': {
+                    'atlassian-addons-project-access': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10007',
+                    'Administrator': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10004',
+                    'Viewer': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10006',
+                    'Member': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10005'}, 'avatarUrls': {
+                    '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408',
+                    '24x24': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=small',
+                    '16x16': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=xsmall',
+                    '32x32': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium'},
+                  'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
+                  'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
+                  'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}
         )
         processor = MongoProcessor()
         assert processor.add_jira_action(action, bot, user)
@@ -5569,11 +5503,12 @@ class TestMongoProcessor:
         )
         responses.add(
             'GET',
-            f'{url}/rest/api/2/project',
-            json=[{}]
+            f'{url}/rest/api/2/project/HEL',
+            json={'errorMessages': ["No project could be found with key 'HAL'."], 'errors': {}},
+            status=404
         )
         processor = MongoProcessor()
-        with pytest.raises(ValidationError, match='Invalid project key'):
+        with pytest.raises(ValidationError):
             processor.add_jira_action(action, bot, user)
 
     @responses.activate
@@ -5598,37 +5533,41 @@ class TestMongoProcessor:
         )
         responses.add(
             'GET',
-            f'{url}/rest/api/2/project',
-            json=[{'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
-                   'self': f'{url}/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL', 'name': 'helicopter',
-                   'avatarUrls': {
-                       '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408'},
-                   'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
-                   'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
-                   'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}]
-        )
-        responses.add(
-            'GET',
-            f'{url}/rest/api/2/issuetype',
-            json=[{'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
-                   'description': 'Subtasks track small pieces of work that are part of a larger task.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
-                   'name': 'Subtask', 'untranslatedName': 'Subtask', 'subtask': True, 'avatarId': 10316,
-                   'hierarchyLevel': -1, 'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
-                   'description': 'A small, distinct piece of work.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
-                   'name': 'Task', 'untranslatedName': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10000', 'id': '10000',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/images/icons/issuetypes/epic.svg', 'name': 'Epic',
-                   'untranslatedName': 'Epic', 'subtask': False, 'hierarchyLevel': 1},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
-                   'name': 'Bug', 'untranslatedName': 'Bug', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}}]
+            f'{url}/rest/api/2/project/HEL',
+            json={'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
+                  'self': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL',
+                  'description': '', 'lead': {
+                    'self': 'https://udit-pandey.atlassian.net/rest/api/2/user?accountId=6205e1585d18ad00729aa75f',
+                    'accountId': '6205e1585d18ad00729aa75f', 'avatarUrls': {
+                        '48x48': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '24x24': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '16x16': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '32x32': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png'},
+                    'displayName': 'Udit Pandey', 'active': True}, 'components': [], 'issueTypes': [
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
+                     'description': 'A small, distinct piece of work.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
+                     'name': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
+                     'description': 'A collection of related bugs, stories, and tasks.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
+                     'name': 'Epic', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
+                     'description': 'Subtasks track small pieces of work that are part of a larger task.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
+                     'name': 'Bug', 'subtask': True, 'avatarId': 10316, 'hierarchyLevel': -1}],
+                  'assigneeType': 'UNASSIGNED', 'versions': [], 'name': 'helicopter', 'roles': {
+                    'atlassian-addons-project-access': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10007',
+                    'Administrator': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10004',
+                    'Viewer': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10006',
+                    'Member': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10005'}, 'avatarUrls': {
+                    '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408',
+                    '24x24': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=small',
+                    '16x16': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=xsmall',
+                    '32x32': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium'},
+                  'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
+                  'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
+                  'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}
         )
         processor = MongoProcessor()
         with pytest.raises(ValidationError, match=f"No issue type '{issue_type}' exists"):
@@ -5655,37 +5594,41 @@ class TestMongoProcessor:
         )
         responses.add(
             'GET',
-            f'{url}/rest/api/2/project',
-            json=[{'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
-                   'self': f'{url}/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL', 'name': 'helicopter',
-                   'avatarUrls': {
-                       '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408'},
-                   'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
-                   'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
-                   'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}]
-        )
-        responses.add(
-            'GET',
-            f'{url}/rest/api/2/issuetype',
-            json=[{'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
-                   'description': 'Subtasks track small pieces of work that are part of a larger task.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
-                   'name': 'Subtask', 'untranslatedName': 'Subtask', 'subtask': True, 'avatarId': 10316,
-                   'hierarchyLevel': -1, 'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
-                   'description': 'A small, distinct piece of work.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
-                   'name': 'Task', 'untranslatedName': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10000', 'id': '10000',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/images/icons/issuetypes/epic.svg', 'name': 'Epic',
-                   'untranslatedName': 'Epic', 'subtask': False, 'hierarchyLevel': 1},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
-                   'name': 'Bug', 'untranslatedName': 'Bug', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}}]
+            f'{url}/rest/api/2/project/HEL',
+            json={'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
+                  'self': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL',
+                  'description': '', 'lead': {
+                    'self': 'https://udit-pandey.atlassian.net/rest/api/2/user?accountId=6205e1585d18ad00729aa75f',
+                    'accountId': '6205e1585d18ad00729aa75f', 'avatarUrls': {
+                        '48x48': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '24x24': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '16x16': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '32x32': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png'},
+                    'displayName': 'Udit Pandey', 'active': True}, 'components': [], 'issueTypes': [
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
+                     'description': 'A small, distinct piece of work.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
+                     'name': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
+                     'description': 'A collection of related bugs, stories, and tasks.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
+                     'name': 'Subtask', 'subtask': True, 'avatarId': 10307, 'hierarchyLevel': 1},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
+                     'description': 'Subtasks track small pieces of work that are part of a larger task.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
+                     'name': 'Bug', 'subtask': True, 'avatarId': 10316, 'hierarchyLevel': -1}],
+                  'assigneeType': 'UNASSIGNED', 'versions': [], 'name': 'helicopter', 'roles': {
+                    'atlassian-addons-project-access': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10007',
+                    'Administrator': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10004',
+                    'Viewer': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10006',
+                    'Member': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10005'}, 'avatarUrls': {
+                    '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408',
+                    '24x24': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=small',
+                    '16x16': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=xsmall',
+                    '32x32': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium'},
+                  'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
+                  'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
+                  'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}
         )
         processor = MongoProcessor()
         with pytest.raises(ValidationError, match="parent key is required for issues of type 'Subtask'"):
@@ -5728,37 +5671,41 @@ class TestMongoProcessor:
         )
         responses.add(
             'GET',
-            f'{url}/rest/api/2/project',
-            json=[{'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
-                   'self': f'{url}/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL', 'name': 'helicopter',
-                   'avatarUrls': {
-                       '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408'},
-                   'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
-                   'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
-                   'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}]
-        )
-        responses.add(
-            'GET',
-            f'{url}/rest/api/2/issuetype',
-            json=[{'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
-                   'description': 'Subtasks track small pieces of work that are part of a larger task.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
-                   'name': 'Subtask', 'untranslatedName': 'Subtask', 'subtask': True, 'avatarId': 10316,
-                   'hierarchyLevel': -1, 'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
-                   'description': 'A small, distinct piece of work.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
-                   'name': 'Task', 'untranslatedName': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10000', 'id': '10000',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/images/icons/issuetypes/epic.svg', 'name': 'Epic',
-                   'untranslatedName': 'Epic', 'subtask': False, 'hierarchyLevel': 1},
-                  {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
-                   'description': 'A collection of related bugs, stories, and tasks.',
-                   'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
-                   'name': 'Bug', 'untranslatedName': 'Bug', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1,
-                   'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}}]
+            f'{url}/rest/api/2/project/HEL',
+            json={'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
+                  'self': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL',
+                  'description': '', 'lead': {
+                    'self': 'https://udit-pandey.atlassian.net/rest/api/2/user?accountId=6205e1585d18ad00729aa75f',
+                    'accountId': '6205e1585d18ad00729aa75f', 'avatarUrls': {
+                        '48x48': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '24x24': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '16x16': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                        '32x32': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png'},
+                    'displayName': 'Udit Pandey', 'active': True}, 'components': [], 'issueTypes': [
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
+                     'description': 'A small, distinct piece of work.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
+                     'name': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
+                     'description': 'A collection of related bugs, stories, and tasks.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
+                     'name': 'Subtask', 'subtask': True, 'avatarId': 10307, 'hierarchyLevel': 1},
+                    {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
+                     'description': 'Subtasks track small pieces of work that are part of a larger task.',
+                     'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
+                     'name': 'Bug', 'subtask': True, 'avatarId': 10316, 'hierarchyLevel': -1}],
+                  'assigneeType': 'UNASSIGNED', 'versions': [], 'name': 'helicopter', 'roles': {
+                    'atlassian-addons-project-access': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10007',
+                    'Administrator': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10004',
+                    'Viewer': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10006',
+                    'Member': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10005'}, 'avatarUrls': {
+                    '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408',
+                    '24x24': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=small',
+                    '16x16': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=xsmall',
+                    '32x32': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium'},
+                  'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
+                  'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
+                  'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}
         )
         processor = MongoProcessor()
         assert not processor.edit_jira_action(action, bot, user)

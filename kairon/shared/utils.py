@@ -656,7 +656,7 @@ class Utility:
         :param content_type: "plain" or "html" content
         :return: None
         """
-        await Utility.trigger_email(email,
+        await Utility.trigger_email([email],
                                     subject,
                                     body,
                                     content_type=content_type,
@@ -1025,7 +1025,7 @@ class Utility:
             from kairon.shared.auth import Authentication
             agent_url = Utility.environment['model']['agent'].get('url')
             token = Authentication.generate_integration_token(bot, email, expiry=5, token_type=TOKEN_TYPE.CHANNEL.value)
-            response = Utility.http_request('get', urljoin(agent_url, f"/api/bot/{bot}/reload"), token)
+            response = Utility.http_request('get', urljoin(agent_url, f"/api/bot/{bot}/reload"), token, email)
             return json.loads(response)
         else:
             raise AppException("Agent config not found!")
@@ -1233,3 +1233,13 @@ class Utility:
         response_json = json.loads(response)
         if 'error_code' in response_json:
             raise ValidationError(response_json['description'])
+
+    @staticmethod
+    def filter_bot_details_for_integration_user(bot: Text, available_bots: dict):
+        for bot_details in available_bots['account_owned']:
+            if bot_details['_id'] == bot:
+                return {'account_owned': [bot_details], 'shared': []}
+
+        for bot_details in available_bots['shared']:
+            if bot_details['_id'] == bot:
+                return {'account_owned': [], 'shared': [bot_details]}

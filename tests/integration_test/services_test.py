@@ -75,9 +75,9 @@ def test_api_wrong_login():
                                 'strict-transport-security': 'includeSubDomains; preload; max-age=31536000',
                                 'x-frame-options': 'SAMEORIGIN', 'x-xss-protection': '0',
                                 'x-content-type-options': 'nosniff',
-                                'content-security-policy': "default-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; connect-src 'self'api.spam.com; frame-src 'self'; img-src 'self' static.spam.com",
+                                'content-security-policy': "default-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; connect-src 'self'; frame-src 'self'; style-src 'self' https: 'unsafe-inline'; img-src 'self' https:; script-src 'self' https: 'unsafe-inline'",
                                 'referrer-policy': 'no-referrer', 'cache-control': 'must-revalidate',
-                                'permissions-policy': "accelerometer=(), autoplay=(), camera=(), document-domain=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), sync-xhr=(), usb=(), geolocation=(self 'spam.com'), vibrate=()"}
+                                'permissions-policy': 'accelerometer=(), autoplay=(), camera=(), document-domain=(), encrypted-media=(), fullscreen=(), vibrate=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), sync-xhr=(), usb=()'}
 
 
 def test_account_registration_error():
@@ -131,11 +131,12 @@ def test_account_registration():
     actual = response.json()
     assert actual["message"] == "Account Registered!"
     assert response.headers == {'content-length': '75', 'content-type': 'application/json', 'server': 'Secure',
-                         'strict-transport-security': 'includeSubDomains; preload; max-age=31536000',
-                         'x-frame-options': 'SAMEORIGIN', 'x-xss-protection': '0', 'x-content-type-options': 'nosniff',
-                         'content-security-policy': "default-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; connect-src 'self'api.spam.com; frame-src 'self'; img-src 'self' static.spam.com",
-                         'referrer-policy': 'no-referrer', 'cache-control': 'must-revalidate',
-                         'permissions-policy': "accelerometer=(), autoplay=(), camera=(), document-domain=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), sync-xhr=(), usb=(), geolocation=(self 'spam.com'), vibrate=()"}
+                                'strict-transport-security': 'includeSubDomains; preload; max-age=31536000',
+                                'x-frame-options': 'SAMEORIGIN', 'x-xss-protection': '0',
+                                'x-content-type-options': 'nosniff',
+                                'content-security-policy': "default-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; connect-src 'self'; frame-src 'self'; style-src 'self' https: 'unsafe-inline'; img-src 'self' https:; script-src 'self' https: 'unsafe-inline'",
+                                'referrer-policy': 'no-referrer', 'cache-control': 'must-revalidate',
+                                'permissions-policy': 'accelerometer=(), autoplay=(), camera=(), document-domain=(), encrypted-media=(), fullscreen=(), vibrate=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), sync-xhr=(), usb=()'}
 
 
 def test_api_wrong_password():
@@ -172,7 +173,7 @@ def test_api_login():
     ).json()
     assert response['data']['user']['_id']
     assert response['data']['user']['email'] == 'integration@demo.ai'
-    assert response['data']['user']['bots']['account_owned'][0]['user'] == 'sysadmin'
+    assert response['data']['user']['bots']['account_owned'][0]['user'] == 'integration@demo.ai'
     assert response['data']['user']['bots']['account_owned'][0]['timestamp']
     assert response['data']['user']['bots']['account_owned'][0]['name']
     assert response['data']['user']['bots']['account_owned'][0]['_id']
@@ -209,13 +210,14 @@ def test_add_bot():
                                 'strict-transport-security': 'includeSubDomains; preload; max-age=31536000',
                                 'x-frame-options': 'SAMEORIGIN', 'x-xss-protection': '0',
                                 'x-content-type-options': 'nosniff',
-                                'content-security-policy': "default-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; connect-src 'self'api.spam.com; frame-src 'self'; img-src 'self' static.spam.com",
+                                'content-security-policy': "default-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; connect-src 'self'; frame-src 'self'; style-src 'self' https: 'unsafe-inline'; img-src 'self' https:; script-src 'self' https: 'unsafe-inline'",
                                 'referrer-policy': 'no-referrer', 'cache-control': 'must-revalidate',
-                                'permissions-policy': "accelerometer=(), autoplay=(), camera=(), document-domain=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), sync-xhr=(), usb=(), geolocation=(self 'spam.com'), vibrate=()"}
+                                'permissions-policy': 'accelerometer=(), autoplay=(), camera=(), document-domain=(), encrypted-media=(), fullscreen=(), vibrate=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), sync-xhr=(), usb=()'}
     response = response.json()
     assert response['message'] == 'Bot created'
     assert response['error_code'] == 0
     assert response['success']
+
 
 def test_list_bots():
     response = client.get(
@@ -223,7 +225,7 @@ def test_list_bots():
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},
     ).json()
     pytest.bot = response['data']['account_owned'][0]['_id']
-    assert response['data']['account_owned'][0]['user'] == 'sysadmin'
+    assert response['data']['account_owned'][0]['user'] == 'integration@demo.ai'
     assert response['data']['account_owned'][0]['timestamp']
     assert response['data']['account_owned'][0]['name'] == 'Hi-Hello'
     assert response['data']['account_owned'][0]['_id']
@@ -251,7 +253,7 @@ def test_update_bot_name():
         json={"data": "Hi-Hello-bot"},
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},
     ).json()
-    assert response['message'] == 'Bot name updated'
+    assert response['message'] == 'Name updated'
     assert response['error_code'] == 0
     assert response['success']
 
@@ -1766,6 +1768,29 @@ def test_integration_token():
             == """This token will be shown only once. Please copy this somewhere safe. 
             It is your responsibility to keep the token secret. If leaked, others may have access to your system."""
     )
+
+    response = client.get(
+        "/api/user/details",
+        headers={"Authorization": token["data"]["token_type"] + " " + token["data"]["access_token"],
+                 "X-USER": 'integration'},
+    ).json()
+    assert len(response['data']['user']['bots']['account_owned']) == 1
+    assert len(response['data']['user']['bots']['shared']) == 0
+
+    response = client.get(
+        "/api/account/bot",
+        headers={"Authorization": token["data"]["token_type"] + " " + token["data"]["access_token"],
+                 "X-USER": 'integration'},
+    ).json()
+    assert len(response['data']['account_owned']) == 1
+    assert len(response['data']['shared']) == 0
+
+    response = client.get(
+        "/api/user/details",
+        headers={"Authorization": pytest.token_type + " " + pytest.access_token},
+    ).json()
+    assert len(response['data']['user']['bots']['account_owned']) == 2
+
     response = client.get(
         f"/api/bot/{pytest.bot}/intents",
         headers={
@@ -2243,7 +2268,9 @@ def test_get_config_templates():
     )
 
     actual = response.json()
-    assert any("default" == template['name'] for template in actual['data']['config-templates'])
+    templates = {template['name'] for template in actual['data']['config-templates']}
+    print(templates)
+    assert templates == {'long-answer', 'rasa-default', 'contextual', 'word-embedding', 'kairon-default'}
     assert actual['error_code'] == 0
     assert actual['message'] is None
     assert actual['success']
@@ -2253,7 +2280,7 @@ def test_set_config_templates():
     response = client.post(
         f"/api/bot/{pytest.bot}/templates/config",
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},
-        json={"data": "default"}
+        json={"data": "rasa-default"}
     )
 
     actual = response.json()
@@ -2294,7 +2321,7 @@ def test_set_config():
     response = client.put(
         f"/api/bot/{pytest.bot}/config",
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},
-        json=read_config_file('./template/config/default.yml')
+        json=read_config_file('./template/config/kairon-default.yml')
     )
 
     actual = response.json()
@@ -2305,7 +2332,7 @@ def test_set_config():
 
 
 def test_set_config_policy_error():
-    data = read_config_file('./template/config/default.yml')
+    data = read_config_file('./template/config/kairon-default.yml')
     data['policies'].append({"name": "TestPolicy"})
     response = client.put(
         f"/api/bot/{pytest.bot}/config",
@@ -2322,7 +2349,7 @@ def test_set_config_policy_error():
 
 
 def test_set_config_pipeline_error():
-    data = read_config_file('./template/config/default.yml')
+    data = read_config_file('./template/config/kairon-default.yml')
     data['pipeline'].append({"name": "TestFeaturizer"})
     response = client.put(
         f"/api/bot/{pytest.bot}/config",
@@ -2338,7 +2365,7 @@ def test_set_config_pipeline_error():
 
 
 def test_set_config_pipeline_error_empty_policies():
-    data = read_config_file('./template/config/default.yml')
+    data = read_config_file('./template/config/kairon-default.yml')
     data['policies'] = []
     response = client.put(
         f"/api/bot/{pytest.bot}/config",
@@ -2446,13 +2473,9 @@ def test_invalid_token_for_confirmation():
 
 
 def test_add_member(monkeypatch):
-    def __mock_verify_token(*args, **kwargs):
-        return "integration@demo.ai"
-
     monkeypatch.setattr(Utility, 'trigger_smtp', mock_smtp)
-    monkeypatch.setattr(Utility, 'verify_token', __mock_verify_token)
+    monkeypatch.setitem(Utility.email_conf["email"], "enable", True)
 
-    Utility.email_conf["email"]["enable"] = True
     response = client.post(
         f"/api/user/{pytest.add_member_bot}/member",
         json={"email": "integration@demo.ai", "role": "tester"},
@@ -2462,7 +2485,71 @@ def test_add_member(monkeypatch):
     assert response['error_code'] == 0
     assert response['success']
 
+
+def test_add_member_as_owner(monkeypatch):
+    response = client.post(
+        f"/api/user/{pytest.add_member_bot}/member",
+        json={"email": "integration@demo.ai", "role": "owner"},
+        headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
+    ).json()
+    assert response['message'] == [{'loc': ['body', 'role'], 'msg': 'There can be only 1 owner per bot', 'type': 'value_error'}]
+    assert response['error_code'] == 422
+    assert not response['success']
+
+
+def test_list_bot_invites():
+    response = client.post(
+        "/api/auth/login",
+        data={"username": "integration@demo.ai", "password": "Welcome@1"},
+    ).json()
+
+    response = client.get(
+        "/api/user/invites/active",
+        headers={"Authorization": response['data']['token_type'] + " " + response['data']['access_token']},
+    ).json()
+    assert response['data']['active_invites'][0]['accessor_email'] == "integration@demo.ai"
+    assert response['data']['active_invites'][0]['role'] == 'tester'
+    assert response['data']['active_invites'][0]['bot_name'] == 'Hi-Hello'
+    assert response['error_code'] == 0
+    assert response['success']
+
+
+def test_search_users(monkeypatch):
+    def __mock_list_bot_invites(*args, **kwargs):
+        return ["integration@demo.ai", "integration@demo.com"]
+
+    monkeypatch.setattr(AccountProcessor, "search_user", __mock_list_bot_invites)
+
+    response = client.get(
+        f"/api/user/search",
+        json={'data': 'inte'},
+        headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
+    ).json()
+    assert response['data']['matching_users'] == ["integration@demo.ai", "integration@demo.com"]
+    assert response['error_code'] == 0
+    assert response['success']
+
+
+def test_transfer_ownership_to_user_not_a_member(monkeypatch):
+    monkeypatch.setitem(Utility.email_conf["email"], "enable", True)
+    response = client.put(
+        f"/api/user/{pytest.add_member_bot}/owner/change",
+        json={"data": "integration@demo.ai"},
+        headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
+    ).json()
+    assert response['message'] == 'User is yet to accept the invite'
+    assert response['error_code'] == 422
+    assert not response['success']
+
+
+def test_accept_bot_invite(monkeypatch):
+    def __mock_verify_token(*args, **kwargs):
+        return "integration@demo.ai"
+
+    monkeypatch.setattr(Utility, 'verify_token', __mock_verify_token)
+    monkeypatch.setattr(Utility, 'trigger_smtp', mock_smtp)
     monkeypatch.setattr(AccountProcessor, 'get_user_details', mock_smtp)
+    monkeypatch.setitem(Utility.email_conf["email"], "enable", True)
     response = client.post(
         f"/api/user/{pytest.add_member_bot}/member/invite/accept",
         json={"data": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJtYWlsX2lkIjoidXNlckBrYWlyb24uY"}
@@ -2470,7 +2557,27 @@ def test_add_member(monkeypatch):
     assert response['message'] == 'Invitation accepted'
     assert response['error_code'] == 0
     assert response['success']
-    Utility.email_conf["email"]["enable"] = False
+
+
+def test_list_bot_invites_none():
+    response = client.get(
+        f"/api/user/invites/active",
+        headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
+    ).json()
+    assert response['data']['active_invites'] == []
+    assert response['error_code'] == 0
+    assert response['success']
+
+
+def test_add_member_email_disabled():
+    response = client.post(
+        f"/api/user/{pytest.add_member_bot}/member",
+        json={"email": "integration_email_false@demo.ai", "role": "designer"},
+        headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
+    ).json()
+    assert response['message'] == 'User added'
+    assert response['error_code'] == 0
+    assert response['success']
 
 
 def test_list_members():
@@ -2481,11 +2588,41 @@ def test_list_members():
     assert response['error_code'] == 0
     assert response['success']
     assert response['data'][0]['accessor_email'] == 'integ1@gmail.com'
-    assert response['data'][0]['role'] == 'admin'
+    assert response['data'][0]['role'] == 'owner'
     assert response['data'][1]['status']
     assert response['data'][1]['accessor_email'] == 'integration@demo.ai'
     assert response['data'][1]['role'] == 'tester'
     assert response['data'][1]['status']
+    assert response['data'][2]['accessor_email'] == 'integration_email_false@demo.ai'
+    assert response['data'][2]['role'] == 'designer'
+    assert response['data'][2]['status']
+
+
+def test_transfer_ownership():
+    response = client.put(
+        f"/api/user/{pytest.add_member_bot}/owner/change",
+        json={"data": "integration@demo.ai"},
+        headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
+    ).json()
+    assert response['message'] == 'Ownership transferred'
+    assert response['error_code'] == 0
+    assert response['success']
+
+    response = client.get(
+        f"/api/user/{pytest.add_member_bot}/member",
+        headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
+    ).json()
+    assert response['error_code'] == 0
+    assert response['success']
+    assert response['data'][0]['accessor_email'] == 'integ1@gmail.com'
+    assert response['data'][0]['role'] == 'admin'
+    assert response['data'][1]['status']
+    assert response['data'][1]['accessor_email'] == 'integration@demo.ai'
+    assert response['data'][1]['role'] == 'owner'
+    assert response['data'][1]['status']
+    assert response['data'][2]['accessor_email'] == 'integration_email_false@demo.ai'
+    assert response['data'][2]['role'] == 'designer'
+    assert response['data'][2]['status']
 
 
 def test_list_members_2():
@@ -2504,7 +2641,21 @@ def test_list_members_2():
     assert response['message'] == 'Access to bot is denied'
 
 
-def test_update_member_role_not_exists():
+def test_update_member_role_not_exists(monkeypatch):
+    response = client.post(
+        "/api/account/registration",
+        json={
+            "email": "user@kairon.ai",
+            "first_name": "Demo",
+            "last_name": "User",
+            "password": "Welcome@1",
+            "confirm_password": "Welcome@1",
+            "account": "user@kairon.ai",
+        },
+    )
+    actual = response.json()
+    assert actual["message"] == "Account Registered!"
+
     response = client.put(
         f"/api/user/{pytest.add_member_bot}/member",
         json={"email": "user@kairon.ai", "role": "admin", "status": "inactive"},
@@ -2518,7 +2669,30 @@ def test_update_member_role_not_exists():
 def test_update_member_role():
     response = client.put(
         f"/api/user/{pytest.add_member_bot}/member",
-        json={"email": "integration@demo.ai", "role": "admin", "status": "inactive"},
+        json={"email": "integration_email_false@demo.ai", "role": "admin", "status": "inactive"},
+        headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
+    ).json()
+    assert response['message'] == 'User does not exist!'
+    assert response['error_code'] == 422
+    assert not response['success']
+
+    response = client.post(
+        "/api/account/registration",
+        json={
+            "email": "integration_email_false@demo.ai",
+            "first_name": "Demo",
+            "last_name": "User",
+            "password": "Welcome@1",
+            "confirm_password": "Welcome@1",
+            "account": "integration_email_false@demo.ai",
+        },
+    )
+    actual = response.json()
+    assert actual["message"] == "Account Registered!"
+
+    response = client.put(
+        f"/api/user/{pytest.add_member_bot}/member",
+        json={"email": "integration_email_false@demo.ai", "role": "admin", "status": "inactive"},
         headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
     ).json()
     assert response['message'] == 'User access updated'
@@ -2528,7 +2702,7 @@ def test_update_member_role():
 
 def test_delete_member():
     response = client.delete(
-        f"/api/user/{pytest.add_member_bot}/member/integration@demo.ai",
+        f"/api/user/{pytest.add_member_bot}/member/integration_email_false@demo.ai",
         headers={"Authorization": pytest.add_member_token_type + " " + pytest.add_member_token},
     ).json()
     assert response['message'] == 'User removed'
@@ -2752,8 +2926,9 @@ def test_list_bots_for_different_user():
         "/api/account/bot",
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},
     ).json()
-    assert len(response['data']['account_owned']) == 1
-    pytest.bot = response['data']['account_owned'][0]['_id']
+    print(response)
+    assert len(response['data']['shared']) == 1
+    pytest.bot = response['data']['shared'][0]['_id']
 
 
 def test_reset_password_for_valid_id(monkeypatch):
@@ -2819,8 +2994,9 @@ def test_list_bots_for_different_user_2():
         "/api/account/bot",
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},
     ).json()
-    assert len(response['data']['account_owned']) == 1
-    pytest.bot = response['data']['account_owned'][0]['_id']
+    print(response)
+    assert len(response['data']['shared']) == 1
+    pytest.bot = response['data']['shared'][0]['_id']
 
 
 def test_login_old_password():
@@ -7318,12 +7494,13 @@ def test_integration_token_from_one_bot_on_another_bot():
         "/api/account/bot",
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},
     ).json()
-    assert len(response['data']['account_owned']) == 2
+    assert len(response['data']['account_owned']) == 1
+    assert len(response['data']['shared']) == 1
     bot1 = response['data']['account_owned'][0]['_id']
-    bot2 = response['data']['account_owned'][1]['_id']
+    bot2 = response['data']['shared'][0]['_id']
 
     response = client.post(
-        f"/api/auth/{bot1}/integration/token",
+        f"/api/auth/{bot2}/integration/token",
         json={'name': 'integration 4', 'expiry_minutes': 1440},
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},
     )
@@ -7334,7 +7511,7 @@ def test_integration_token_from_one_bot_on_another_bot():
     assert token["data"]["token_type"]
 
     response = client.get(
-        f"/api/bot/{bot2}/intents",
+        f"/api/bot/{bot1}/intents",
         headers={
             "Authorization": token["data"]["token_type"]
                              + " "
@@ -7357,7 +7534,7 @@ def test_integration_token_from_one_bot_on_another_bot():
         },
     )
     actual = response.json()
-    assert actual["message"] == "['admin', 'designer', 'tester'] access is required to perform this operation on the bot"
+    assert actual["message"] == "['owner', 'admin', 'designer', 'tester'] access is required to perform this operation on the bot"
     assert not actual["success"]
     assert actual["error_code"] == 401
 
@@ -7410,7 +7587,7 @@ def test_list_integrations():
 def test_add_channel_config_error():
     data = {"connector_type": "custom",
             "config": {
-                "slack_token": "xoxb-801939352912-801478018484-v3zq6MYNu62oSs8vammWOY8K",
+                "bot_user_oAuth_token": "xoxb-801939352912-801478018484-v3zq6MYNu62oSs8vammWOY8K",
                 "slack_signing_secret": "79f036b9894eef17c064213b90d1042b"}}
     response = client.post(
         f"/api/bot/{pytest.bot}/channels",
@@ -7436,12 +7613,12 @@ def test_add_channel_config_error():
     assert not actual["success"]
     assert actual["error_code"] == 422
     assert actual["message"] == [
-        {'loc': ['body', 'config'], 'msg': "Missing ['slack_token', 'slack_signing_secret'] all or any in config",
+        {'loc': ['body', 'config'], 'msg': "Missing ['bot_user_oAuth_token', 'slack_signing_secret'] all or any in config",
          'type': 'value_error'}]
 
     data = {"connector_type": "slack",
             "config": {
-                "slack_token": "xoxb-801939352912-801478018484-v3zq6MYNu62oSs8vammWOY8K"}}
+                "bot_user_oAuth_token": "xoxb-801939352912-801478018484-v3zq6MYNu62oSs8vammWOY8K"}}
     response = client.post(
         f"/api/bot/{pytest.bot}/channels",
         json=data,
@@ -7451,7 +7628,7 @@ def test_add_channel_config_error():
     assert not actual["success"]
     assert actual["error_code"] == 422
     assert actual["message"] == [
-        {'loc': ['body', 'config'], 'msg': "Missing ['slack_token', 'slack_signing_secret'] all or any in config",
+        {'loc': ['body', 'config'], 'msg': "Missing ['bot_user_oAuth_token', 'slack_signing_secret'] all or any in config",
          'type': 'value_error'}]
 
 
@@ -7459,7 +7636,7 @@ def test_add_channel_config(monkeypatch):
     monkeypatch.setitem(Utility.environment['model']['agent'], 'url', "http://localhost:5056")
     data = {"connector_type": "slack",
             "config": {
-                "slack_token": "xoxb-801939352912-801478018484-v3zq6MYNu62oSs8vammWOY8K",
+                "bot_user_oAuth_token": "xoxb-801939352912-801478018484-v3zq6MYNu62oSs8vammWOY8K",
                 "slack_signing_secret": "79f036b9894eef17c064213b90d1042b"}}
     response = client.post(
         f"/api/bot/{pytest.bot}/channels",
@@ -7560,37 +7737,41 @@ def test_add_jira_action():
     )
     responses.add(
         'GET',
-        f'{url}/rest/api/2/project',
-        json=[{'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
-               'self': f'{url}/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL', 'name': 'helicopter',
-               'avatarUrls': {
-                   '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408'},
-               'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
-               'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
-               'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}]
-    )
-    responses.add(
-        'GET',
-        f'{url}/rest/api/2/issuetype',
-        json=[{'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
-               'description': 'Subtasks track small pieces of work that are part of a larger task.',
-               'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
-               'name': 'Subtask', 'untranslatedName': 'Subtask', 'subtask': True, 'avatarId': 10316,
-               'hierarchyLevel': -1, 'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-              {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
-               'description': 'A small, distinct piece of work.',
-               'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
-               'name': 'Task', 'untranslatedName': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0,
-               'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-              {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10000', 'id': '10000',
-               'description': 'A collection of related bugs, stories, and tasks.',
-               'iconUrl': 'https://udit-pandey.atlassian.net/images/icons/issuetypes/epic.svg', 'name': 'Epic',
-               'untranslatedName': 'Epic', 'subtask': False, 'hierarchyLevel': 1},
-              {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
-               'description': 'A collection of related bugs, stories, and tasks.',
-               'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
-               'name': 'Bug', 'untranslatedName': 'Bug', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1,
-               'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}}]
+        f'{url}/rest/api/2/project/HEL',
+        json={'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
+              'self': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL',
+              'description': '', 'lead': {
+                'self': 'https://udit-pandey.atlassian.net/rest/api/2/user?accountId=6205e1585d18ad00729aa75f',
+                'accountId': '6205e1585d18ad00729aa75f', 'avatarUrls': {
+                    '48x48': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                    '24x24': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                    '16x16': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                    '32x32': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png'},
+                'displayName': 'Udit Pandey', 'active': True}, 'components': [], 'issueTypes': [
+                {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
+                 'description': 'A small, distinct piece of work.',
+                 'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
+                 'name': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0},
+                {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
+                 'description': 'A collection of related bugs, stories, and tasks.',
+                 'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
+                 'name': 'Epic', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1},
+                {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
+                 'description': 'Subtasks track small pieces of work that are part of a larger task.',
+                 'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
+                 'name': 'Bug', 'subtask': True, 'avatarId': 10316, 'hierarchyLevel': -1}],
+              'assigneeType': 'UNASSIGNED', 'versions': [], 'name': 'helicopter', 'roles': {
+                'atlassian-addons-project-access': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10007',
+                'Administrator': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10004',
+                'Viewer': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10006',
+                'Member': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10005'}, 'avatarUrls': {
+                '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408',
+                '24x24': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=small',
+                '16x16': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=xsmall',
+                '32x32': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium'},
+              'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
+              'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
+              'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}
     )
     response = client.post(
         f"/api/bot/{pytest.bot}/action/jira",
@@ -7637,37 +7818,41 @@ def test_edit_jira_action():
     )
     responses.add(
         'GET',
-        f'{url}/rest/api/2/project',
-        json=[{'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
-               'self': f'{url}/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL', 'name': 'helicopter',
-               'avatarUrls': {
-                   '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408'},
-               'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
-               'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
-               'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}]
-    )
-    responses.add(
-        'GET',
-        f'{url}/rest/api/2/issuetype',
-        json=[{'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
-               'description': 'Subtasks track small pieces of work that are part of a larger task.',
-               'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
-               'name': 'Subtask', 'untranslatedName': 'Subtask', 'subtask': True, 'avatarId': 10316,
-               'hierarchyLevel': -1, 'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-              {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
-               'description': 'A small, distinct piece of work.',
-               'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
-               'name': 'Task', 'untranslatedName': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0,
-               'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}},
-              {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10000', 'id': '10000',
-               'description': 'A collection of related bugs, stories, and tasks.',
-               'iconUrl': 'https://udit-pandey.atlassian.net/images/icons/issuetypes/epic.svg', 'name': 'Epic',
-               'untranslatedName': 'Epic', 'subtask': False, 'hierarchyLevel': 1},
-              {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
-               'description': 'A collection of related bugs, stories, and tasks.',
-               'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
-               'name': 'Bug', 'untranslatedName': 'Bug', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1,
-               'scope': {'type': 'PROJECT', 'project': {'id': '10000'}}}]
+        f'{url}/rest/api/2/project/HEL',
+        json={'expand': 'description,lead,issueTypes,url,projectKeys,permissions,insight',
+              'self': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000', 'id': '10000', 'key': 'HEL',
+              'description': '', 'lead': {
+                'self': 'https://udit-pandey.atlassian.net/rest/api/2/user?accountId=6205e1585d18ad00729aa75f',
+                'accountId': '6205e1585d18ad00729aa75f', 'avatarUrls': {
+                    '48x48': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                    '24x24': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                    '16x16': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png',
+                    '32x32': 'https://secure.gravatar.com/avatar/6864b14113f03cbe6d55af5006b12efe?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUP-0.png'},
+                'displayName': 'Udit Pandey', 'active': True}, 'components': [], 'issueTypes': [
+                {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10001', 'id': '10001',
+                 'description': 'A small, distinct piece of work.',
+                 'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium',
+                 'name': 'Task', 'subtask': False, 'avatarId': 10318, 'hierarchyLevel': 0},
+                {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10002', 'id': '10002',
+                 'description': 'A collection of related bugs, stories, and tasks.',
+                 'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium',
+                 'name': 'Epic', 'subtask': False, 'avatarId': 10307, 'hierarchyLevel': 1},
+                {'self': 'https://udit-pandey.atlassian.net/rest/api/2/issuetype/10003', 'id': '10003',
+                 'description': 'Subtasks track small pieces of work that are part of a larger task.',
+                 'iconUrl': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10316?size=medium',
+                 'name': 'Subtask', 'subtask': True, 'avatarId': 10316, 'hierarchyLevel': -1}],
+              'assigneeType': 'UNASSIGNED', 'versions': [], 'name': 'helicopter', 'roles': {
+                'atlassian-addons-project-access': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10007',
+                'Administrator': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10004',
+                'Viewer': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10006',
+                'Member': 'https://udit-pandey.atlassian.net/rest/api/2/project/10000/role/10005'}, 'avatarUrls': {
+                '48x48': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408',
+                '24x24': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=small',
+                '16x16': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=xsmall',
+                '32x32': 'https://udit-pandey.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium'},
+              'projectTypeKey': 'software', 'simplified': True, 'style': 'next-gen', 'isPrivate': False,
+              'properties': {}, 'entityId': '8a851ebf-72eb-461d-be68-4c2c28805440',
+              'uuid': '8a851ebf-72eb-461d-be68-4c2c28805440'}
     )
     response = client.put(
         f"/api/bot/{pytest.bot}/action/jira",
@@ -8012,11 +8197,11 @@ def test_channels_params():
     assert actual["success"]
     assert actual["error_code"] == 0
     assert "slack" in list(actual['data'].keys())
-    assert ["slack_token", "slack_signing_secret"] == actual['data']['slack']['required_fields']
+    assert ["bot_user_oAuth_token", "slack_signing_secret"] == actual['data']['slack']['required_fields']
     assert ["slack_channel"] == actual['data']['slack']['optional_fields']
 
 
-def test_get_channel_endpoint_not_configured(monkeypatch):
+def test_get_channel_endpoint_not_configured():
     response = client.get(
         f"/api/bot/{pytest.bot}/channels/slack/endpoint",
         headers={"Authorization": pytest.token_type + " " + pytest.access_token},

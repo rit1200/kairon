@@ -54,17 +54,20 @@ class Authentication:
             if user is None:
                 raise credentials_exception
             user_model = User(**user)
-            if payload.get("type") == TOKEN_TYPE.INTEGRATION.value:
-                Authentication.validate_integration_token(payload, request.path_params.get('bot'))
+            if payload.get("type") != TOKEN_TYPE.LOGIN.value:
+                Authentication.validate_bot_request(request.path_params.get('bot'), payload.get('bot'))
+                if payload.get("type") == TOKEN_TYPE.INTEGRATION.value:
+                    Authentication.validate_integration_token(payload)
                 alias_user = request.headers.get("X-USER")
-                if Utility.check_empty_string(alias_user):
+                if Utility.check_empty_string(alias_user) and payload.get("type") == TOKEN_TYPE.INTEGRATION.value:
                     raise HTTPException(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                         detail="Alias user missing for integration",
                         headers={"WWW-Authenticate": "Bearer"},
                     )
+                user_model.active_bot = payload.get('bot')
                 user_model.is_integration_user = True
-                user_model.alias_user = alias_user
+                user_model.alias_user = alias_user or username
                 user_model.role = payload.get('role')
             return user_model
         except PyJWTError:
@@ -94,13 +97,7 @@ class Authentication:
                 detail=f"{security_scopes.scopes} access is required to perform this operation on the bot",
                 headers={"WWW-Authenticate": authenticate_value},
             )
-        bot = AccountProcessor.get_bot(bot_id)
-        if not bot["status"]:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Inactive Bot Please contact system admin!",
-                headers={"WWW-Authenticate": authenticate_value},
-            )
+        AccountProcessor.get_bot_and_validate_status(bot_id)
         user.active_bot = bot_id
         return user
 
@@ -229,14 +226,11 @@ class Authentication:
         IntegrationProcessor.update_integration(name, bot, user, int_status)
 
     @staticmethod
-    def validate_integration_token(payload: dict, accessing_bot: Text):
+    def validate_integration_token(payload: dict):
         """
-        Validates:
-        1. whether integration token with this payload is active.
-        2. the bot which is being accessed is the same bot for which the integration was generated.
+        Validates whether integration token with this payload is active.
 
         :param payload: Auth token claims dict.
-        :param accessing_bot: bot for which the request was made.
         """
         exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -247,8 +241,6 @@ class Authentication:
         user = payload.get('sub')
         iat = payload.get('iat')
         role = payload.get('role')
-        if not Utility.check_empty_string(accessing_bot) and accessing_bot != bot:
-            raise exception
         try:
             IntegrationProcessor.verify_integration_token(name, bot, user, iat, role)
         except Exception as e:
@@ -280,8 +272,22 @@ class Authentication:
         if existing_user:
             AccountProcessor.get_user_details(user_details['email'])
         else:
-            await AccountProcessor.account_setup(user_details, "sysadmin")
+            await AccountProcessor.account_setup(user_details)
             tmp_token = Utility.generate_token(user_details['email'])
             await AccountProcessor.confirm_email(tmp_token)
         access_token = Authentication.create_access_token(data={"sub": user_details["email"]})
         return existing_user, user_details, access_token
+
+    @staticmethod
+    def validate_bot_request(bot_in_request_path: str, bot_in_token: str):
+        """
+        Validates the bot which is being accessed is the same bot for which the integration was generated.
+
+        :param bot_in_request_path: bot for which the request was made.
+        :param bot_in_token: bot which is present in auth token claims.
+        """
+        if not Utility.check_empty_string(bot_in_request_path) and bot_in_request_path != bot_in_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Access to bot is denied',
+            )

@@ -1224,7 +1224,7 @@ class MongoProcessor:
         except DoesNotExist as e:
             logging.info(e)
             configs = Configs._from_son(
-                read_config_file("./template/config/default.yml")
+                read_config_file("./template/config/kairon-default.yml")
             )
         return configs
 
@@ -2698,10 +2698,10 @@ class MongoProcessor:
         """
         for action in GoogleSearchAction.objects(bot=bot, status=True):
             action = action.to_mongo().to_dict()
-            action['_id'] = action['_id'].__str__()
             action['api_key'] = Utility.decrypt_message(action['api_key'])
             if mask_characters:
                 action['api_key'] = action['api_key'][:-3] + '***'
+            action.pop('_id')
             action.pop('user')
             action.pop('bot')
             action.pop('timestamp')
@@ -3362,7 +3362,7 @@ class MongoProcessor:
         from kairon.shared.auth import Authentication
         from kairon.shared.account.processor import AccountProcessor
 
-        AccountProcessor.get_bot(bot)
+        AccountProcessor.get_bot_and_validate_status(bot)
         bot_accessor = next(AccountProcessor.list_bot_accessors(bot))['accessor_email']
         try:
             client_config = ChatClientConfig.objects(bot=bot, status=True).get()
@@ -3375,7 +3375,7 @@ class MongoProcessor:
         if not client_config.config['headers'].get('X-USER'):
             client_config.config['headers']['X-USER'] = bot_accessor
         token = Authentication.generate_integration_token(
-            bot, bot_accessor, expiry=1440, access_limit=['/api/bot/.+/chat'], token_type=TOKEN_TYPE.DYNAMIC.value
+            bot, bot_accessor, expiry=30, access_limit=['/api/bot/.+/chat'], token_type=TOKEN_TYPE.DYNAMIC.value
         )
         client_config.config['headers']['authorization'] = f'Bearer {token}'
         return client_config
@@ -3936,7 +3936,7 @@ class MongoProcessor:
 
         zendesk_action = ZendeskAction(**action).save().to_mongo().to_dict()["_id"].__str__()
         self.add_action(
-            action['name'], bot, user, action_type=ActionType.jira_action.value, raise_exception=False
+            action['name'], bot, user, action_type=ActionType.zendesk_action.value, raise_exception=False
         )
         return zendesk_action
 
