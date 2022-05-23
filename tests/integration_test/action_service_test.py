@@ -2,7 +2,7 @@ from jira import JIRAError
 from tornado.test.testing_test import AsyncHTTPTestCase
 from kairon.actions.server import make_app
 from kairon.shared.actions.data_objects import HttpActionConfig, SlotSetAction, Actions, FormValidationAction, \
-    EmailActionConfig, ActionServerLogs, GoogleSearchAction, JiraAction, ZendeskAction, PipedriveLeadsAction
+    EmailActionConfig, ActionServerLogs, GoogleSearchAction, JiraAction, ZendeskAction, PipedriveLeadsAction, SetSlots
 from kairon.shared.actions.exception import ActionFailure
 from kairon.shared.actions.models import ActionType
 from kairon.shared.data.data_objects import Slots
@@ -236,9 +236,7 @@ class TestActionServer(AsyncHTTPTestCase):
         action_name = "test_slot_set_from_value"
         action = SlotSetAction(
             name=action_name,
-            slot="location",
-            type="from_value",
-            value="Mumbai",
+            set_slots=[SetSlots(name="location", type="from_value", value="Mumbai")],
             bot="5f50fd0a56b698ca10d35d2e",
             user="user"
         )
@@ -289,9 +287,9 @@ class TestActionServer(AsyncHTTPTestCase):
         action_name = "test_slot_set_action_reset_slot"
         action = SlotSetAction(
             name=action_name,
-            slot="location",
-            type="reset_slot",
-            value="current_location",
+            set_slots=[SetSlots(name="location", type="reset_slot", value="current_location"),
+                       SetSlots(name="name", type="from_value", value="end_user"),
+                       SetSlots(name="age", type="reset_slot")],
             bot="5f50fd0a56b698ca10d35d2e",
             user="user"
         )
@@ -304,7 +302,7 @@ class TestActionServer(AsyncHTTPTestCase):
             "tracker": {
                 "sender_id": "default",
                 "conversation_id": "default",
-                "slots": {"bot": "5f50fd0a56b698ca10d35d2e", "location": 'Bengaluru', 'current_location': 'Bengaluru'},
+                "slots": {"bot": "5f50fd0a56b698ca10d35d2e", "location": 'Bengaluru', 'current_location': 'Bengaluru', "name": "Udit", "age": 24},
                 "latest_message": {'text': 'get intents', 'intent_ranking': [{'name': 'test_run'}]},
                 "latest_event_time": 1537645578.314389,
                 "followup_action": "action_listen",
@@ -332,19 +330,19 @@ class TestActionServer(AsyncHTTPTestCase):
             response = self.fetch("/webhook", method="POST", body=json.dumps(request_object).encode('utf-8'))
             response_json = json.loads(response.body.decode("utf8"))
             self.assertEqual(response.code, 200)
-            self.assertEqual(len(response_json['events']), 1)
+            self.assertEqual(len(response_json['events']), 3)
             self.assertEqual(len(response_json['responses']), 0)
             self.assertEqual(response_json['events'],
-                             [{'event': 'slot', 'timestamp': None, 'name': 'location', 'value': None}])
+                             [{'event': 'slot', 'timestamp': None, 'name': 'location', 'value': None},
+                              {'event': 'slot', 'timestamp': None, 'name': 'name', 'value': "end_user"},
+                              {'event': 'slot', 'timestamp': None, 'name': 'age', 'value': None}])
             self.assertEqual(response_json['responses'], [])
 
     def test_slot_set_action_from_slot_not_present(self):
         action_name = "test_slot_set_action_from_slot_not_present"
         action = SlotSetAction(
             name=action_name,
-            slot="location",
-            type="from_slot",
-            value="current_location",
+            set_slots=[SetSlots(name="location", type="from_slot", value="current_location")],
             bot="5f50fd0a56b698ca10d35d2e",
             user="user"
         )
@@ -2161,7 +2159,7 @@ class TestActionServer(AsyncHTTPTestCase):
             "tracker": {
                 "sender_id": "default",
                 "conversation_id": "default",
-                "slots": {'bot': bot, 'name': 'udit pandey', 'org_name': 'digite', 'email': 'pandey.udit867@gmail.com', 'phone': '9876543210'},
+                "slots": {'bot': bot, 'name': 'udit pandey', 'organization': 'digite', 'email': 'pandey.udit867@gmail.com', 'phone': '9876543210'},
                 "latest_message": {'text': 'get intents', 'intent_ranking': [{'name': 'test_run'}]},
                 "latest_event_time": 1537645578.314389,
                 "followup_action": "action_listen",
@@ -2235,15 +2233,30 @@ class TestActionServer(AsyncHTTPTestCase):
             "version": "version"
         }
 
-        with patch('pipedrive.client.Client'):
-            response = self.fetch("/webhook", method="POST", body=json.dumps(request_object).encode('utf-8'))
-            response_json = json.loads(response.body.decode("utf8"))
-            self.assertEqual(response_json, {'events': [
-                {'event': 'slot', 'timestamp': None, 'name': 'kairon_action_response',
-                 'value': 'lead created'}], 'responses': [
-                {'text': 'lead created', 'buttons': [], 'elements': [], 'custom': {},
-                 'template': None,
-                 'response': None, 'image': None, 'attachment': None}]})
+        def __mock_create_organization(*args, **kwargs):
+            return {"success": True, "data": {"id": 2}}
+
+        def __mock_create_person(*args, **kwargs):
+            return {"success": True, "data": {"id": 2}}
+
+        def __mock_create_leads(*args, **kwargs):
+            return {"success": True, "data": {"id": 2}}
+
+        def __mock_create_note(*args, **kwargs):
+            return {"success": True, "data": {"id": 2}}
+
+        with patch('pipedrive.organizations.Organizations.create_organization', __mock_create_organization):
+            with patch('pipedrive.persons.Persons.create_person', __mock_create_person):
+                with patch('pipedrive.leads.Leads.create_lead', __mock_create_leads):
+                    with patch('pipedrive.notes.Notes.create_note', __mock_create_note):
+                        response = self.fetch("/webhook", method="POST", body=json.dumps(request_object).encode('utf-8'))
+                        response_json = json.loads(response.body.decode("utf8"))
+                        self.assertEqual(response_json, {'events': [
+                            {'event': 'slot', 'timestamp': None, 'name': 'kairon_action_response',
+                             'value': 'lead created'}], 'responses': [
+                            {'text': 'lead created', 'buttons': [], 'elements': [], 'custom': {},
+                             'template': None,
+                             'response': None, 'image': None, 'attachment': None}]})
 
     def test_process_pipedrive_leads_action_failure(self):
         action_name = "test_process_pipedrive_leads_action_failure"
@@ -2262,7 +2275,7 @@ class TestActionServer(AsyncHTTPTestCase):
             "tracker": {
                 "sender_id": "default",
                 "conversation_id": "default",
-                "slots": {"bot": bot, "to_email": "test@test.com"},
+                "slots": {"bot": bot, "to_email": "test@test.com", "organization": "digite"},
                 "latest_message": {'text': 'get intents', 'intent_ranking': [{'name': 'test_run'}]},
                 "latest_event_time": 1537645578.314389,
                 "followup_action": "action_listen",
@@ -2340,7 +2353,7 @@ class TestActionServer(AsyncHTTPTestCase):
             from pipedrive.exceptions import BadRequestError
             raise BadRequestError('Invalid request raised', {'error_code': 402})
 
-        with patch('pipedrive.client.Client', __mock_pipedrive_error) as mock:
+        with patch('pipedrive.organizations.Organizations.create_organization', __mock_pipedrive_error):
             response = self.fetch("/webhook", method="POST", body=json.dumps(request_object).encode('utf-8'))
             response_json = json.loads(response.body.decode("utf8"))
             self.assertEqual(response_json, {'events': [

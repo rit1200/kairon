@@ -1,5 +1,5 @@
 database:
-  url: ${DATABASE_URL:"mongodb://localhost/test"}
+  url: ${DATABASE_URL:"mongodb://192.168.100.38:27017/conversations"}
   test_db: ${TEST_DB:"test_conversations"}
 
 app:
@@ -8,6 +8,12 @@ app:
 user:
   reset_password_request_limit: ${RESET_PASSWORD_REQUEST_LIMIT:3}
   reset_password_cooldown_period: ${RESET_PASSWORD_COOLDOWN_PERIOD:120}
+
+storage:
+  assets:
+    root_dir: ${BOT_ASSETS_ROOT_DIRECTORY:"application"}
+    bucket: ${BOT_ASSETS_BUCKET:"ui-bucket"}
+    allowed_extensions: ${BOT_ASSETS_ALLOWED_EXTENSIONS:[".png",".jpeg",".jpg"]}
 
 security:
   secret_key: ${SECRET_KEY:"b9d01861392757c66daaf1f214268e2739a5baac935071d06e2ea71a66dc5bcd"}
@@ -45,11 +51,14 @@ model:
     event_url: ${TEST_EVENT_URL}
     dataset_threshold: ${TEST_DATA_THRESHOLD:10}
     dataset_percentage: ${TEST_DATA_PERCENTAGE:10}
+    augmentation_similarity_threshold: ${TEST_DATA_AUGMENTATION_SIMILARITY_THRESHOLD:0.70}
   data_importer:
     limit_per_day: ${IMPORTING_LIMIT_PER_DAY:5}
     event_url: ${IMPORTER_EVENT_URL}
   agent:
     url: ${AGENT_URL}
+  config_properties:
+    epoch_max_limit: ${EPOCH_MAX_LIMIT:200}
 
 action:
   url: ${ACTION_SERVER_URL:"http://localhost:5055/webhook"}
@@ -76,34 +85,3 @@ history_server:
 notifications:
   enable: ${ENABLE_NOTIFICATIONS:false}
   server_endpoint: ${PUSH_SERVER_ENDPOINT:"ws://localhost:8082/events/"}
-
-channels:
-  slack:
-    required_fields:
-      - bot_user_oAuth_token
-      - slack_signing_secret
-    optional_fields:
-      - slack_channel
-  telegram:
-    required_fields:
-      - access_token
-      - username_for_bot
-    api:
-      url: https://api.telegram.org
-  hangouts:
-    required_fields:
-      - project_id
-  messenger:
-    required_fields:
-      - app_secret
-      - page_access_token
-      - verity_token
-
-integrations:
-  pipedrive:
-    required_fields:
-      - name
-    optional_fields:
-      - org_name
-      - email
-      - phone
